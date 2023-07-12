@@ -45,7 +45,7 @@ class AuthenticationHelper {
         "email": email.replaceAll(" ", ""),
       }).then((documentReference) {
         print("success");
-        // return true;
+        return true;
         // Navigator.pushNamed(context, productRoute);
         // print(documentReference!.documentID);
         // clearForm();
@@ -79,14 +79,15 @@ class AuthenticationHelper {
           .collection("users")
           .doc(AuthenticationHelper().user.uid)
           .get();
-      print(user_);
+      print('=================');
+      print(user_.data());
       // userRole = user_['role'];
 
       // if (user['role'] != 0) {
       //   GoRouter.of(context).go("/home/profile");
       // }
 
-      return null;
+      return user_;
     } on FirebaseAuthException catch (e) {
       return e.message;
     }

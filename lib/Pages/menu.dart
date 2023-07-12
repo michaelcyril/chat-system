@@ -1,8 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:group_chat/Constants/colors.dart';
 import 'package:group_chat/Pages/files_page.dart';
 import 'package:group_chat/Pages/group_page.dart';
+import 'package:group_chat/Pages/login.dart';
 import 'package:group_chat/Pages/users_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MainMenuScreen extends StatefulWidget {
   const MainMenuScreen({super.key});
@@ -12,8 +16,63 @@ class MainMenuScreen extends StatefulWidget {
 }
 
 class _MainMenuScreenState extends State<MainMenuScreen> {
+  @override
+  void initState() {
+    userInfo();
+    checkLoginStatus();
+    super.initState();
+  }
+
+  checkLoginStatus() async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    if (sharedPreferences.getString("token") == null) {
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()));
+    }
+  }
+
   int _selectedIndex = 0;
   String appbarname = "Users";
+  var userData;
+
+  void userInfo() async {
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+    var userJson = localStorage.getString('user');
+    var user = json.decode(userJson!);
+    setState(() {
+      userData = user;
+    });
+  }
+
+  areYouSureYoWantToLogOut(BuildContext context) {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Logout Attempt'),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Are you sure you want to logout.'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+                SharedPreferences localStorage =
+                    await SharedPreferences.getInstance();
+                localStorage.clear();
+              },
+              child: Text('Yes'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   final List<Widget> _widgetOptions = [
     const UsersScreen(),
@@ -107,23 +166,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                 Icons.person,
                 color: Colors.black,
               ),
-              title: const Text(
-                'Michael Cyril',
-                style: TextStyle(color: Colors.white),
-              ),
-              onTap: () {
-                // Navigator.pop(context);
-                // areYouSureYoWantToLogOut(context);
-                // Handle drawer item tap for settings
-              },
-            ),
-            ListTile(
-              leading: const Icon(
-                Icons.phone,
-                color: Colors.black,
-              ),
-              title: const Text(
-                '0693331836',
+              title: Text(
+                userData['username'],
                 style: TextStyle(color: Colors.white),
               ),
               onTap: () {
@@ -137,8 +181,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                 Icons.email,
                 color: Colors.black,
               ),
-              title: const Text(
-                'michaelcyril71@gmail.com',
+              title: Text(
+                userData['email'],
                 style: TextStyle(color: Colors.white),
               ),
               onTap: () {
@@ -158,6 +202,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
               ),
               onTap: () {
                 Navigator.pop(context);
+                areYouSureYoWantToLogOut(context);
                 // areYouSureYoWantToLogOut(context);
                 // Handle drawer item tap for settings
               },

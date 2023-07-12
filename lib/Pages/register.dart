@@ -1,6 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:group_chat/Constants/colors.dart';
+import 'package:group_chat/Pages/login.dart';
+import 'package:group_chat/api/api.dart';
 import 'package:group_chat/helper/firebase_helper.dart';
+import 'package:group_chat/utils/snackbar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:group_chat/Pages/menu.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -74,24 +80,54 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _submit() {
     if (_formKey.currentState!.validate()) {
       // TODO SAVE DATA
-      login();
+      _register();
     }
   }
 
-  void login() {
+  // void login() {
+  //   var data = {
+  //     'email': userEmailController.text,
+  //     'password': userPasswordController.text,
+  //     'username': userNameController.text
+  //   };
+
+  //   print(data);
+  //   var authentication = new AuthenticationHelper();
+  //   authentication.signUp(
+  //       email: data['email']!,
+  //       name: data['username']!,
+  //       password: data['password']!);
+  //   Navigator.pop(context);
+  // }
+
+  void _register() async {
     var data = {
+      'username': userNameController.text,
       'email': userEmailController.text,
       'password': userPasswordController.text,
-      'username': userNameController.text
     };
-
     print(data);
-    var authentication = new AuthenticationHelper();
-    authentication.signUp(
-        email: data['email']!,
-        name: data['username']!,
-        password: data['password']!);
-    print(authentication);
+    print('object');
+
+    var res = await CallApi().authenticatedPostRequest(data, 'auth/register');
+    if (res == null) {
+      // ignore: use_build_context_synchronously
+      showSnack(context, 'Network Error!');
+    } else {
+      var body = json.decode(res!.body);
+      if (res.statusCode == 200) {
+        if (body['sms'] == 'success') {
+          // Navigator.pop(context);
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => const LoginScreen()));
+          showSnack(context, 'Successful registration!');
+        }
+        Navigator.pop(context);
+      } else if (res.statusCode == 400) {
+        // ignore: use_build_context_synchronously
+        showSnack(context, 'Network Error!');
+      } else {}
+    }
   }
 
   contactAdminDialog(BuildContext context) {
@@ -178,7 +214,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     Center(
                       child: Text(
-                        'LOGIN MMCL',
+                        'REGISTER CHAT APP',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 20),
                       ),
@@ -317,7 +353,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         borderRadius: BorderRadius.circular(14.0),
                         child: Center(
                           child: Text(
-                            'Login',
+                            'Register',
                             style: TextStyle(color: Colors.white),
                           ),
                         ),

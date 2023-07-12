@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:group_chat/Constants/colors.dart';
 import 'package:group_chat/Pages/menu.dart';
 import 'package:group_chat/Pages/register.dart';
+import 'package:group_chat/api/api.dart';
+import 'package:group_chat/helper/firebase_helper.dart';
+import 'package:group_chat/utils/snackbar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,6 +16,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  var userId;
   TextEditingController userEmailController = TextEditingController();
   TextEditingController userPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -42,6 +48,58 @@ class _LoginScreenState extends State<LoginScreen> {
       return 'Password must be of 8 or more digit';
     else
       return null;
+  }
+
+  void _submit() {
+    if (_formKey.currentState!.validate()) {
+      // TODO SAVE DATA
+      _login();
+    }
+  }
+
+  String? validateMyUsername(String? value) {
+// Indian Mobile number are of 10 digit only
+    // print('here');
+    if (value!.isEmpty) {
+      return 'Username Field must not be empty';
+    }
+  }
+
+  void _login() async {
+    var data = {
+      'username': userEmailController.text,
+      'password': userPasswordController.text,
+    };
+    print('object');
+
+    var res = await CallApi().authenticatedPostRequest(data, 'auth/login');
+    if (res == null) {
+    } else {
+      var body = json.decode(res!.body);
+
+      if (res.statusCode == 200) {
+        SharedPreferences localStorage = await SharedPreferences.getInstance();
+        if (body['sms'] == 'success') {
+          setState(() {
+            userId = body['user']['id'];
+          });
+          localStorage.setString("user", json.encode(body['user']));
+          localStorage.setString("token", json.encode(body['token']));
+          userEmailController.clear();
+          userPasswordController.clear();
+          // ignore: use_build_context_synchronously
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => const MainMenuScreen()));
+        } else {
+          // ignore: use_build_context_synchronously
+          showSnack(context, 'Wrong User name or Password!');
+        }
+      } else if (res.statusCode == 400) {
+        showSnack(context, 'Connection Error!');
+      } else {}
+    }
+
+    // ignore: avoid_print
   }
 
   contactAdminDialog(BuildContext context) {
@@ -78,27 +136,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 Navigator.pop(context);
                 // redirectToEmailApp();
               },
-              child: Text('Contact Admin'),
+              child: const Text('Contact Admin'),
             ),
           ],
         );
       },
     );
   }
-
-  // void redirectToEmailApp() async {
-  //   String email = Uri.encodeComponent("info@mmcl.co.tz");
-  //   String subject = Uri.encodeComponent("Request for registration");
-  //   String body = Uri.encodeComponent(
-  //       "Hi! I'm the client who request for the registration. \n Contact me when you get this email.");
-  //   print(subject); //output: Hello%20Flutter
-  //   Uri mail = Uri.parse("mailto:$email?subject=$subject&body=$body");
-  //   if (await launchUrl(mail)) {
-  //     //email app opened
-  //   } else {
-  //     //email app is not opened
-  //   }
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -107,9 +151,9 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          physics: AlwaysScrollableScrollPhysics(),
+          physics: const AlwaysScrollableScrollPhysics(),
           child: Padding(
-            padding: EdgeInsets.fromLTRB(24.0, 40.0, 24.0, 0),
+            padding: const EdgeInsets.fromLTRB(24.0, 40.0, 24.0, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -123,19 +167,19 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 150,
                       ),
                     ),
-                    SizedBox(
+                    const SizedBox(
                       height: 20,
                     ),
-                    Center(
+                    const Center(
                       child: Text(
-                        'LOGIN MMCL',
+                        'REGISTER CHAT APP',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 20),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 20,
                 ),
                 Form(
@@ -144,7 +188,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       TextFormField(
                         controller: userEmailController,
-                        validator: validateUsername,
+                        validator: validateMyUsername,
                         keyboardType: TextInputType.emailAddress,
                         style: Theme.of(context).textTheme.bodyMedium,
                         decoration: InputDecoration(
@@ -156,7 +200,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             borderSide: BorderSide.none,
                           ),
-                          hintText: 'Email',
+                          hintText: 'Username',
                           hintStyle: const TextStyle(
                             color: Colors.black12,
                             fontSize: 14,
@@ -199,10 +243,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 32,
                 ),
-                Row(
+                const Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     // CustomCheckbox(),
@@ -228,14 +272,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: Colors.transparent,
                       child: InkWell(
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => MainMenuScreen()),
-                          );
+                          // Navigator.push(
+                          //   context,
+                          //   MaterialPageRoute(
+                          //       builder: (context) => MainMenuScreen()),
+                          // );
+                          _submit();
                         },
                         borderRadius: BorderRadius.circular(14.0),
-                        child: Center(
+                        child: const Center(
                           child: Text(
                             'Login',
                             style: TextStyle(color: Colors.white),
@@ -248,13 +293,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 // SizedBox(
                 //   height: 24,
                 // ),
-                SizedBox(
+                const SizedBox(
                   height: 50,
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
+                    const Text(
                       "Not Registered! ",
                       // style: regular16pt.copyWith(color: textGrey),
                     ),
@@ -262,19 +307,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       onTap: () {
                         // contactAdminDialog(context);
                         Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => RegisterScreen()),
-                          );
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const RegisterScreen()),
+                        );
                       },
-                      child: Text(
+                      child: const Text(
                         'Click here',
                         // style: regular16pt.copyWith(color: primaryBlue),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 40,
                 ),
               ],

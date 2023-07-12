@@ -1,8 +1,18 @@
+import 'dart:convert';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:group_chat/Pages/login.dart';
 import 'package:group_chat/Widgets/message_card.dart';
+import 'package:group_chat/api/api.dart';
+import 'package:group_chat/utils/snackbar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:file_picker/file_picker.dart';
 
 class UserChatScreen extends StatefulWidget {
-  const UserChatScreen({super.key});
+  final toid;
+  final toname;
+  const UserChatScreen({super.key, required this.toid, required this.toname});
 
   @override
   State<UserChatScreen> createState() => _UserChatScreenState();
@@ -11,15 +21,69 @@ class UserChatScreen extends StatefulWidget {
 class _UserChatScreenState extends State<UserChatScreen> {
   TextEditingController messageController = TextEditingController();
 
+  final _formKey = GlobalKey<FormState>();
   final List<String> items = ['s', 's', 'r', 'r', 's', 'r', 'r', 's'];
+  @override
+  void initState() {
+    userInfo();
+    checkLoginStatus();
+    super.initState();
+  }
 
+  void userInfo() async {
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+    var userJson = localStorage.getString('user');
+    var user = json.decode(userJson!);
+    setState(() {
+      userData = user;
+    });
+    fetchUsersChats(context);
+  }
+
+  checkLoginStatus() async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    if (sharedPreferences.getString("token") == null) {
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()));
+    }
+  }
+
+  void pickFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'doc'],
+    );
+
+    if (result != null) {
+      PlatformFile file = result.files.first;
+
+      // Access the picked file's properties
+      String fileName = file.name;
+      String filePath = file.path!;
+      int fileSize = file.size;
+      String mimeType = file.extension!;
+      setState(() {
+        selectedFile = file;
+      });
+
+      // Perform actions with the picked file
+      // e.g., upload it to a server, process it, etc.
+    } else {
+      // User canceled the file picking operation
+    }
+  }
+
+  var selectedFile;
+
+  var userData;
+  var chats;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
           titleSpacing: 0.0,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back),
             onPressed: () {
               // Handle back button press
               Navigator.pop(context);
@@ -27,19 +91,20 @@ class _UserChatScreenState extends State<UserChatScreen> {
           ),
           title: Row(
             children: [
-              CircleAvatar(
+              const CircleAvatar(
                 backgroundImage: AssetImage('assets/images/profile.png'),
                 radius: 20,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Michael Cyril',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    widget.toname,
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-                  Text(
+                  const Text(
                     'Online',
                     style: TextStyle(fontSize: 12),
                   ),
@@ -49,21 +114,21 @@ class _UserChatScreenState extends State<UserChatScreen> {
           ),
           actions: [
             IconButton(
-              icon: Icon(Icons.call),
+              icon: const Icon(Icons.call),
               onPressed: () {
                 // Handle call button press
                 // ...
               },
             ),
             IconButton(
-              icon: Icon(Icons.videocam),
+              icon: const Icon(Icons.videocam),
               onPressed: () {
                 // Handle video call button press
                 // ...
               },
             ),
             IconButton(
-              icon: Icon(Icons.more_vert),
+              icon: const Icon(Icons.more_vert),
               onPressed: () {
                 // Handle more options button press
                 // ...
@@ -74,86 +139,304 @@ class _UserChatScreenState extends State<UserChatScreen> {
         body: Column(
           children: [
             Expanded(
-              child: ListView.builder(
-                  itemCount: items.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    return items[index] == 's'
-                        ? const Row(
-                            children: [
-                              Expanded(flex: 1, child: Text('')),
-                              Expanded(
-                                flex: 3,
-                                child: MessageCard(
-                                  sender: 'John Doe',
-                                  message: 'Hello, how are you?',
-                                  timestamp: '10:30 AM',
-                                  bgColors: Colors.white,
-                                ),
-                              ),
-                            ],
-                          )
-                        : const Row(
-                            children: [
-                              Expanded(
-                                flex: 3,
-                                child: MessageCard(
-                                  sender: 'John Doe',
-                                  message: 'Hello, how are you?',
-                                  timestamp: '10:30 AM',
-                                  bgColors: Colors.white,
-                                ),
-                              ),
-                              Expanded(flex: 1, child: Text('')),
-                            ],
-                          );
-                  }),
+              child: chats == null
+                  ? const Text('')
+                  : ListView.builder(
+                      itemCount: chats.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        print(index);
+                        print(chats[index]['message']);
+                        // print(userData);
+                        return chats[index]['from_user_id'] == userData['id']
+                            ? Row(
+                                children: [
+                                  Expanded(flex: 1, child: Text('')),
+                                  Expanded(
+                                    flex: 3,
+                                    child: chats[index].containsKey('file')
+                                        ? Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                borderRadius: BorderRadius.circular(
+                                                    10.0), // Set the border radius
+                                                color: Colors
+                                                    .blue, // Set the background color
+                                              ),
+                                              child: ListTile(
+                                                onTap: () {
+                                                  // Handle the press event here
+                                                  paymentDialog(
+                                                      context,
+                                                      chats[index]['from_user'],
+                                                      chats[index]['file']
+                                                          .split('/')[1]);
+                                                },
+                                                // Set the background color
+                                                title: Text(
+                                                    chats[index]['from_user']),
+                                                subtitle: Text(chats[index]
+                                                        ['file']
+                                                    .split('/')[1]),
+                                                leading:
+                                                    Icon(Icons.file_present),
+                                                // trailing:
+                                                //     Icon(Icons.arrow_forward),
+                                              ),
+                                            ),
+                                          )
+                                        : MessageCard(
+                                            sender: chats[index]['from_user'],
+                                            message: chats[index]['message'],
+                                            timestamp: '10:30 AM',
+                                            bgColors: Colors.white,
+                                          ),
+                                  ),
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  Expanded(
+                                    flex: 3,
+                                    child: chats[index].containsKey('file')
+                                        ? Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                borderRadius: BorderRadius.circular(
+                                                    10.0), // Set the border radius
+                                                color: Colors
+                                                    .blue, // Set the background color
+                                              ),
+                                              child: ListTile(
+                                                onTap: () {
+                                                  // Handle the press event here
+                                                  paymentDialog(
+                                                      context,
+                                                      chats[index]['from_user'],
+                                                      chats[index]['file']
+                                                          .split('/')[1]);
+                                                },
+                                                // Set the background color
+                                                title: Text(
+                                                    chats[index]['from_user']),
+                                                subtitle: Text(chats[index]
+                                                        ['file']
+                                                    .split('/')[1]),
+                                                leading:
+                                                    Icon(Icons.file_present),
+                                                // trailing:
+                                                //     Icon(Icons.arrow_forward),
+                                              ),
+                                            ),
+                                          )
+                                        : MessageCard(
+                                            sender: chats[index]['from_user'],
+                                            message: chats[index]['message'],
+                                            timestamp: '10:30 AM',
+                                            bgColors: Colors.white,
+                                          ),
+                                  ),
+                                  Expanded(flex: 1, child: Text('')),
+                                ],
+                              );
+                      }),
             ),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.3),
-                    blurRadius: 3,
-                    offset: Offset(0, -2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      decoration: InputDecoration.collapsed(
-                        hintText: 'Type a message',
+            Column(
+              children: [
+                selectedFile != null
+                    ? ListTile(
+                        // hoverColor: Colors.brown,
+                        // leading: const CircleAvatar(
+                        //   backgroundImage: AssetImage('assets/images/teamwork.png'),
+                        // ),
+                        title: const Text("File type: pdf"),
+                        subtitle: Text("File name: ${selectedFile.name}"),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.file_present),
+                          onPressed: () {
+                            // Handle message button press
+                            // ...
+                          },
+                        ),
+                        onTap: () {},
+                      )
+                    : Container(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.3),
+                        blurRadius: 3,
+                        offset: const Offset(0, -2),
                       ),
+                    ],
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: messageController,
+                            decoration: InputDecoration.collapsed(
+                              hintText: 'Type a message',
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.attach_file),
+                          onPressed: () {
+                            // Handle attachment button press
+                            // ...
+                            pickFile();
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.camera_alt),
+                          onPressed: () {
+                            // Handle camera button press
+                            // ...
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.send),
+                          onPressed: () {
+                            // Handle send button press
+                            // ...
+                            sendMessage();
+                          },
+                        ),
+                      ],
                     ),
                   ),
-                  IconButton(
-                    icon: Icon(Icons.attach_file),
-                    onPressed: () {
-                      // Handle attachment button press
-                      // ...
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.camera_alt),
-                    onPressed: () {
-                      // Handle camera button press
-                      // ...
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.send),
-                    onPressed: () {
-                      // Handle send button press
-                      // ...
-                    },
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         ));
+  }
+
+  fetchUsersChats(context) async {
+    print('============================');
+
+    // print(userData);
+    var res = await CallApi().authenticatedGetRequest(
+        'chat/usermessages/' + userData['id'].toString()+"/${widget.toid.toString()}");
+    print(res);
+    if (res != null) {
+      var userChat = json.decode(res.body);
+      if (res.statusCode == 200) {
+        setState(() {
+          chats = userChat;
+        });
+      } else {}
+      return [];
+    } else {
+      return [];
+    }
+  }
+
+  void normalMessage() async {
+    var data = {
+      'from_user': userData['id'],
+      'to': widget.toid,
+      'message': messageController.text,
+    };
+
+    var res =
+        await CallApi().authenticatedPostRequest(data, 'chat/createmessage');
+    if (res == null) {
+      // ignore: use_build_context_synchronously
+      showSnack(context, 'Network Error!');
+    } else {
+      var body = json.decode(res!.body);
+      if (res.statusCode == 200) {
+        if (body['message'] == 'message sent') {
+          showSnack(context, 'Message sent!');
+          messageController.clear();
+        } else {
+          // Navigator.pop(context);
+          showSnack(context, 'Message Failed!');
+        }
+      } else if (res.statusCode == 400) {
+        // ignore: use_build_context_synchronously
+        showSnack(context, 'Network Error!');
+      } else {}
+    }
+  }
+
+  void sendMessage() async {
+    if (selectedFile == null) {
+      // return;
+      normalMessage();
+    }
+
+    try {
+      String apiUrl = 'chat/createmessage'; // Replace with your API endpoint
+      FormData formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(selectedFile!.path),
+        'from_user': userData['id'],
+        'to': widget.toid,
+      });
+
+      var res = await CallApi().authenticatedUploadRequest(formData, apiUrl,
+          context: context, uploaded: null, state: this);
+      if (res == null) {
+        // ignore: use_build_context_synchronously
+        showSnack(context, 'Network Error!');
+      } else {
+        var body = json.decode(res!.body);
+        if (res.statusCode == 200) {
+          if (body['message'] == 'message sent') {
+            setState(() {});
+            showSnack(context, 'Message sent!');
+            messageController.clear();
+          } else {
+            // Navigator.pop(context);
+            showSnack(context, 'Message Failed!');
+          }
+        } else if (res.statusCode == 400) {
+          // ignore: use_build_context_synchronously
+          showSnack(context, 'Network Error!');
+        } else {}
+      }
+    } catch (e) {
+      // Handle error
+      print('Image upload error: $e');
+      showSnack(context, 'Network Error!');
+    }
+  }
+
+  paymentDialog(BuildContext context, String filename, String sendername) {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Payment Attempt'),
+          content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Document name:', style: TextStyle(fontWeight: FontWeight.bold),),
+              Text( sendername),
+              Text('Sender name:', style: TextStyle(fontWeight: FontWeight.bold),),
+              Text(filename),
+              Text('The payment cost 25,000/= is required to be paid.'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+              },
+              child: Text('Confirm'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
