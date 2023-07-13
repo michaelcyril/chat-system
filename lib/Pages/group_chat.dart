@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'package:intl/intl.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:group_chat/Pages/login.dart';
@@ -50,7 +50,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   void pickFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf', 'doc'],
+      allowedExtensions: ['jpg', 'jpeg', 'png'],
     );
 
     if (result != null) {
@@ -163,31 +163,34 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                                                     .blue, // Set the background color
                                               ),
                                               child: ListTile(
-                                                onTap: () {
-                                                  // Handle the press event here
-                                                  paymentDialog(
-                                                      context,
-                                                      chats[index]['from_user'],
-                                                      chats[index]['file']
-                                                          .split('/')[1]);
-                                                },
-                                                // Set the background color
-                                                title: Text(
-                                                    chats[index]['from_user']),
-                                                subtitle: Text(chats[index]
-                                                        ['file']
-                                                    .split('/')[1]),
-                                                leading:
-                                                    Icon(Icons.file_present),
-                                                // trailing:
-                                                //     Icon(Icons.arrow_forward),
-                                              ),
+                                                  onTap: () {
+                                                    // Handle the press event here
+                                                    paymentDialog(
+                                                        context,
+                                                        chats[index]
+                                                            ['from_user'],
+                                                        chats[index]['file']
+                                                            .split('/')[1]);
+                                                  },
+                                                  // Set the background color
+                                                  title: Text(chats[index]
+                                                      ['from_user']),
+                                                  subtitle: Image.network(
+                                                      'http://46.101.244.29:8000/media/' +
+                                                          chats[index]['file']),
+                                                  // leading:
+                                                  //     Icon(Icons.file_present),
+                                                  trailing: Text(
+                                                    formatTimestamp(chats[index]
+                                                        ['created_at']),
+                                                  )),
                                             ),
                                           )
                                         : MessageCard(
                                             sender: chats[index]['from_user'],
                                             message: chats[index]['message'],
-                                            timestamp: '10:30 AM',
+                                            timestamp: formatTimestamp(
+                                                chats[index]['created_at']),
                                             bgColors: Colors.white,
                                           ),
                                   ),
@@ -208,31 +211,37 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                                                     .blue, // Set the background color
                                               ),
                                               child: ListTile(
-                                                onTap: () {
-                                                  // Handle the press event here
-                                                  paymentDialog(
-                                                      context,
-                                                      chats[index]['from_user'],
-                                                      chats[index]['file']
-                                                          .split('/')[1]);
-                                                },
-                                                // Set the background color
-                                                title: Text(
-                                                    chats[index]['from_user']),
-                                                subtitle: Text(chats[index]
-                                                        ['file']
-                                                    .split('/')[1]),
-                                                leading:
-                                                    Icon(Icons.file_present),
-                                                // trailing:
-                                                //     Icon(Icons.arrow_forward),
-                                              ),
+                                                  onTap: () {
+                                                    // Handle the press event here
+                                                    paymentDialog(
+                                                        context,
+                                                        chats[index]
+                                                            ['from_user'],
+                                                        chats[index]['file']
+                                                            .split('/')[1]);
+                                                  },
+                                                  // Set the background color
+                                                  title: Text(chats[index]
+                                                      ['from_user']),
+                                                  // subtitle: Text(chats[index]
+                                                  //         ['file']
+                                                  //     .split('/')[1]),
+                                                  subtitle: Image.network(
+                                                      'http://46.101.244.29:8000/media/' +
+                                                          chats[index]['file']),
+                                                  // leading:
+                                                  //     Icon(Icons.file_present),
+                                                  trailing: Text(
+                                                    formatTimestamp(chats[index]
+                                                        ['created_at']),
+                                                  )),
                                             ),
                                           )
                                         : MessageCard(
                                             sender: chats[index]['from_user'],
                                             message: chats[index]['message'],
-                                            timestamp: '10:30 AM',
+                                            timestamp: formatTimestamp(
+                                                chats[index]['created_at']),
                                             bgColors: Colors.white,
                                           ),
                                   ),
@@ -244,26 +253,23 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             Column(
               children: [
                 selectedFile != null
-                ?
-                ListTile(
-                // hoverColor: Colors.brown,
-                  // leading: const CircleAvatar(
-                  //   backgroundImage: AssetImage('assets/images/teamwork.png'),
-                  // ),
-                  title: Text("File type: Pdf"),
-                  subtitle: Text("File name: ${selectedFile.name}"),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.file_present),
-                    onPressed: () {
-                      // Handle message button press
-                      // ...
-                      
-                    },
-                  ),
-                  onTap: () {},
-                )
-                :
-                Container(),
+                    ? ListTile(
+                        // hoverColor: Colors.brown,
+                        // leading: const CircleAvatar(
+                        //   backgroundImage: AssetImage('assets/images/teamwork.png'),
+                        // ),
+                        title: Text("File type: Pdf"),
+                        subtitle: Text("File name: ${selectedFile.name}"),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.file_present),
+                          onPressed: () {
+                            // Handle message button press
+                            // ...
+                          },
+                        ),
+                        onTap: () {},
+                      )
+                    : Container(),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   decoration: BoxDecoration(
@@ -278,7 +284,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   ),
                   child: Row(
                     children: [
-                       Expanded(
+                      Expanded(
                         child: TextField(
                           controller: _messageController,
                           // validator: validateMyUsername,
@@ -350,7 +356,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         await CallApi().authenticatedPostRequest(data, 'chat/createmessage');
     if (res == null) {
       // ignore: use_build_context_synchronously
-      showSnack(context, 'Network Error!');
+      // showSnack(context, 'Network Error!');
     } else {
       var body = json.decode(res!.body);
       if (res.statusCode == 200) {
@@ -369,13 +375,19 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     }
   }
 
+  // void sendMessage() async {
+  //   try {
+  //     // return;
+  //     normalMessage();
+  //   } catch (e) {
+  //     fileMessage();
+  //   }
+  // }
 
   void sendMessage() async {
     if (selectedFile == null) {
-      // return;
       normalMessage();
     }
-
     try {
       String apiUrl = 'chat/createmessage'; // Replace with your API endpoint
       FormData formData = FormData.fromMap({
@@ -388,30 +400,34 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           context: context, uploaded: null, state: this);
       if (res == null) {
         // ignore: use_build_context_synchronously
-        showSnack(context, 'Network Error!');
+        // showSnack(context, 'Network Error!');
+        setState(() {
+          selectedFile = null;
+        });
       } else {
         var body = json.decode(res!.body);
         if (res.statusCode == 200) {
           if (body['message'] == 'message sent') {
-            setState(() {});
-            showSnack(context, 'Message sent!');
+            setState(() {
+              selectedFile = null;
+            });
+            // showSnack(context, 'Message sent!');
             _messageController.clear();
           } else {
             // Navigator.pop(context);
-            showSnack(context, 'Message Failed!');
+            // showSnack(context, 'Message Failed!');
           }
         } else if (res.statusCode == 400) {
           // ignore: use_build_context_synchronously
-          showSnack(context, 'Network Error!');
+          // showSnack(context, 'Network Error!');
         } else {}
       }
     } catch (e) {
       // Handle error
-      print('Image upload error: $e');
-      showSnack(context, 'Network Error!');
+      // print('Image upload error: $e');
+      // showSnack(context, 'Network Error!');
     }
   }
-
 
   paymentDialog(BuildContext context, String filename, String sendername) {
     return showDialog(
@@ -423,9 +439,15 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Document name:', style: TextStyle(fontWeight: FontWeight.bold),),
-              Text( sendername),
-              Text('Sender name:', style: TextStyle(fontWeight: FontWeight.bold),),
+              Text(
+                'Document name:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text(sendername),
+              Text(
+                'Sender name:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               Text(filename),
               Text('The payment cost 25,000/= is required to be paid.'),
             ],
@@ -441,5 +463,20 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         );
       },
     );
+  }
+
+  String formatTimestamp(String timestamp) {
+    DateTime dateTime = DateTime.parse(timestamp);
+    DateTime now = DateTime.now();
+
+    if (dateTime.day == now.day &&
+        dateTime.month == now.month &&
+        dateTime.year == now.year) {
+      // Date is today
+      return DateFormat('h:mm a').format(dateTime); // Format time as "10:00 AM"
+    } else {
+      return DateFormat('EEEE, h:mm a')
+          .format(dateTime); // Format as "Monday, 10:10 AM"
+    }
   }
 }

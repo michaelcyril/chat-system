@@ -123,6 +123,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           showSnack(context, 'Successful registration!');
         }
         Navigator.pop(context);
+        showSnack(context, 'Successful registration!');
       } else if (res.statusCode == 400) {
         // ignore: use_build_context_synchronously
         showSnack(context, 'Network Error!');
@@ -360,30 +361,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                   ),
-                ),
-                // SizedBox(
-                //   height: 24,
-                // ),
-                SizedBox(
-                  height: 50,
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Not Registered! ",
-                      // style: regular16pt.copyWith(color: textGrey),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        // contactAdminDialog(context);
-                      },
-                      child: Text(
-                        'Click here',
-                        // style: regular16pt.copyWith(color: primaryBlue),
-                      ),
-                    ),
-                  ],
                 ),
                 SizedBox(
                   height: 40,
