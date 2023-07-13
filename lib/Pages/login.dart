@@ -172,7 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const Center(
                       child: Text(
-                        'REGISTER CHAT APP',
+                        'LOGIN CHAT APP',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 20),
                       ),
