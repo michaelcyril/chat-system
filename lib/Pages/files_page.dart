@@ -58,7 +58,7 @@ class _DocumentScreenState extends State<DocumentScreen> {
             itemBuilder: (context, index) {
               return InkWell(
                 // ignore: prefer_interpolation_to_compose_strings
-                child: Image.network('http://161.35.210.153:5000/media/' +
+                child: Image.network('http://164.92.118.246:7500/media/' +
                     files[index]['name']),
                 // onTap: () {
                 //   Navigator.push(
