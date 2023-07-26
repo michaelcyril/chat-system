@@ -178,7 +178,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
                                                   title: Text(chats[index]
                                                       ['from_user']),
                                                   subtitle: Image.network(
-                                                      'http://161.35.210.153:5000/media/' +
+                                                      'http://164.92.118.246:7500/media/' +
                                                           chats[index]['file']),
                                                   // leading:
                                                   //     Icon(Icons.file_present),
@@ -229,7 +229,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
                                                   //         ['file']
                                                   //     .split('/')[1]),
                                                   subtitle: Image.network(
-                                                      'http://161.35.210.153:5000/media/' +
+                                                      'http://164.92.118.246:7500/media/' +
                                                           chats[index]['file']),
                                                   // leading:
                                                   //     Icon(Icons.file_present),
