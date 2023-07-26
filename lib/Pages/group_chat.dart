@@ -227,7 +227,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                                                   //         ['file']
                                                   //     .split('/')[1]),
                                                   subtitle: Image.network(
-                                                      'http://161.35.210.153:5000/media/' +
+                                                      'http://164.92.118.246:7500/media/' +
                                                           chats[index]['file']),
                                                   // leading:
                                                   //     Icon(Icons.file_present),
